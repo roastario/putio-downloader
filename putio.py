@@ -156,7 +156,7 @@ class _File(_BaseResource):
 
         downloader = td.ThreadedDownloader(".", number_of_connections)
         url = BASE_URL + '/files/' + str(self.id) + '/download?oauth_token=' + self.client.access_token
-        downloader.multi_part_download_file(self, dest, url)
+        downloader.multi_part_download_file(dest, url, file_info=self)
 
 
         if delete_after_download:

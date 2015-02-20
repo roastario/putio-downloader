@@ -5,19 +5,14 @@ import threading
 import os
 
 
-class ThreadedDownloader(object):
-    def __init__(self, download_dir, number_of_connections=5):
-        self.download_dir = download_dir
-        self.number_of_connections = number_of_connections
-        self.queue = Queue.Queue(10)  # create back pressure on the downloading threads if we are slow to write to disk
-
-
-    def writer(self, file_name):
+class DiskWriter(object):
+    @staticmethod
+    def writer(queue, file_name):
         written_bytes = 0
         f = open(file_name, 'wb')
         print "Saving to: {0}".format(file_name)
         while True:
-            item = self.queue.get()
+            item = queue.get()
             if item is None:
                 break
             f.seek(item['offset'])
@@ -28,6 +23,13 @@ class ThreadedDownloader(object):
         print "Finished {0}".format(file_name)
         f.close()
 
+
+class ThreadedDownloader(object):
+    def __init__(self, download_dir, number_of_connections=5):
+        self.download_dir = download_dir
+        self.number_of_connections = int(number_of_connections)
+        self.queue = Queue.Queue(10)  # create back pressure on the downloading threads if we are slow to write to disk
+
     def create_chunks(self, file_size):
         chunks = []
         remaining = file_size
@@ -35,7 +37,9 @@ class ThreadedDownloader(object):
             chunk_size = file_size // self.number_of_connections
             chunks.append({'bytes': chunk_size, 'offset': file_size - remaining})
             remaining = remaining - chunk_size
-        chunks.append({'bytes': remaining, 'offset': file_size - remaining})
+
+        if remaining > 0:
+            chunks.append({'bytes': remaining, 'offset': file_size - remaining})
         return chunks
 
     def create_downloading_threads(self, chunks, url):
@@ -57,8 +61,8 @@ class ThreadedDownloader(object):
         writer_thread.join()
 
     def create_and_start_writing_thread(self, dest, file_info):
-        writer_thread = threading.Thread(target=self.writer,
-                                         args=(os.path.join(dest, file_info.name.encode('ascii', 'replace'), )))
+        dest = os.path.join(dest, file_info.name.encode('ascii', 'replace'))
+        writer_thread = threading.Thread(target=DiskWriter.writer, args=(self.queue, dest))
         writer_thread.start()
         return writer_thread
 
