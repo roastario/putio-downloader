@@ -7,7 +7,6 @@ from putio import Client
 
 
 if __name__ == "__main__":
-
     optlist, args = getopt.getopt(sys.argv[1:], '', ['api_key=', 'output-directory=', 'number_of_connections=',
                                                      'delete_after_download', 'exclude_pattern=', 'help'])
 
@@ -39,10 +38,9 @@ if __name__ == "__main__":
             if string_to_filter in FILE.name:
                 was_filtered = True
                 break
-        # try:
-        if not was_filtered:
-            FILE.download(dest=output_directory, delete_after_download=delete_after_download,
-                          number_of_connections=number_of_connections)
-            # except Exception, e:
-            # print "FATAL: FAILED TO DOWNLOAD " + FILE.name
-            #     raise e
+        try:
+            if not was_filtered:
+                FILE.download(dest=output_directory, delete_after_download=delete_after_download,
+                              number_of_connections=number_of_connections)
+        except Exception, e:
+            print "FATAL: FAILED TO DOWNLOAD " + FILE.name + " due to " + e.message
