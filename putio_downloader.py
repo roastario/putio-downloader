@@ -33,12 +33,13 @@ if __name__ == "__main__":
 
     for FILE in client.File.list():
 
-        for string_to_filter in (strings_to_filter if type(strings_to_filter) == type([]) else [strings_to_filter]):
+        for string_to_filter in (strings_to_filter if isinstance(strings_to_filter, list) else [strings_to_filter]):
             if string_to_filter in FILE.name:
                 continue
 
         try:
-            FILE.download(dest=output_directory, delete=delete_after_download, number_of_connections=number_of_connections)
+            FILE.download(dest=output_directory, delete=delete_after_download,
+                          number_of_connections=number_of_connections)
         except:
             print "FATAL: FAILED TO DOWNLOAD " + FILE.name
             continue
