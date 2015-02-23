@@ -1,4 +1,6 @@
 #!/usr/bin/python
+import datetime
+
 __author__ = 'stefanofranz'
 # -*- coding: utf-8 -*-
 import os
@@ -6,20 +8,19 @@ import json
 import logging
 
 import requests
+import dateutil.parser
 
 import threaded_downloader as td
+import download_record_keeper as rk
 
 
-BASE_URL_NO_SSL = 'http://api.put.io/v2'
 BASE_URL = 'https://api.put.io/v2'
-ACCESS_TOKEN_URL = 'http://api.put.io/v2/oauth2/access_token'
-AUTHENTICATION_URL = 'http://api.put.io/v2/oauth2/authenticate'
-
 logger = logging.getLogger(__name__)
 
-class Client(object):
 
-    def __init__(self, access_token):
+class Client(object):
+    def __init__(self, access_token, record_keeper=None):
+        self.record_keeper = record_keeper if record_keeper is not None else rk.YES_MAN
         self.access_token = access_token
         self.session = requests.session()
 
@@ -76,7 +77,6 @@ class Client(object):
 
 
 class _BaseResource(object):
-
     client = None
 
     def __init__(self, resource_dict):
@@ -85,10 +85,11 @@ class _BaseResource(object):
         self.id = None
         self.name = None
         self.__dict__.update(resource_dict)
-        # try:
-        #     self.created_at = iso8601.parse_date(self.created_at)
-        # except (AttributeError, iso8601.ParseError):
-        #     self.created_at = None
+        try:
+            self.created_at = dateutil.parser.parse(self.created_at)
+            self.age = (datetime.datetime.today() - self.created_at).days
+        except (AttributeError, ValueError):
+            self.created_at = None
 
     def __str__(self):
         return self.name.encode('utf-8')
@@ -101,7 +102,6 @@ class _BaseResource(object):
 
 
 class _File(_BaseResource):
-
     @classmethod
     def get(cls, id):
         d = cls.client.request('/files/%i' % id, method='GET')
@@ -130,13 +130,15 @@ class _File(_BaseResource):
         """List the files under directory."""
         return self.list(parent_id=self.id)
 
-    def download(self, dest='.', delete_after_download=False, number_of_connections=1):
+    def download(self, dest='.', delete_after_download=False, number_of_connections=1, days_to_keep=7):
         if self.content_type == 'application/x-directory':
-            self._download_directory(dest, delete_after_download, number_of_connections=number_of_connections)
+            self._download_directory(dest, delete_after_download, number_of_connections=number_of_connections,
+                                     days_to_keep=days_to_keep)
         else:
-            self._download_file(dest, delete_after_download, number_of_connections=number_of_connections)
+            self._download_file(dest, delete_after_download, number_of_connections=number_of_connections,
+                                days_to_keep=days_to_keep)
 
-    def _download_directory(self, dest='.', delete_after_download=False, number_of_connections=1):
+    def _download_directory(self, dest='.', delete_after_download=False, number_of_connections=1, days_to_keep=7):
         name = self.name
         if isinstance(name, unicode):
             name = name.encode('utf-8', 'replace')
@@ -146,20 +148,24 @@ class _File(_BaseResource):
             os.mkdir(dest)
 
         for sub_file in self.dir():
-            sub_file.download(dest, delete_after_download, number_of_connections=number_of_connections)
+            sub_file.download(dest, delete_after_download, number_of_connections=number_of_connections, days_to_keep=7)
 
-        if delete_after_download:
+        if delete_after_download and self.age > days_to_keep:
             self.delete()
 
-    def _download_file(self, dest='.', delete_after_download=False, number_of_connections=1):
+    def _download_file(self, dest='.', delete_after_download=False, number_of_connections=1, days_to_keep=7):
         print "Downloading", self.name
 
-        downloader = td.ThreadedDownloader(".", number_of_connections)
-        url = BASE_URL + '/files/' + str(self.id) + '/download?oauth_token=' + self.client.access_token
-        downloader.multi_part_download_file(dest, url, file_info=self)
+        if self.client.record_keeper.should_download(os.path.join(dest, self.name)):
+            downloader = td.ThreadedDownloader(".", number_of_connections)
+            url = BASE_URL + '/files/' + str(self.id) + '/download?oauth_token=' + self.client.access_token
+            downloader.multi_part_download_file(dest, url, file_info=self)
+            self.client.record_keeper.record_completion(os.path.join(dest, self.name))
+            
+        else:
+            print "Skipping: " + self.name + " as it has been downloaded already!"
 
-
-        if delete_after_download:
+        if delete_after_download and self.age > days_to_keep:
             self.delete()
 
     def delete(self):
@@ -176,7 +182,6 @@ class _File(_BaseResource):
 
 
 class _Transfer(_BaseResource):
-
     @classmethod
     def list(cls):
         d = cls.client.request('/transfers/list')
@@ -214,7 +219,6 @@ class _Transfer(_BaseResource):
 
 
 class _Account(_BaseResource):
-
     @classmethod
     def info(cls):
         return cls.client.request('/account/info', method='GET')

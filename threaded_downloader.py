@@ -95,8 +95,7 @@ class ThreadedDownloader(object):
             self.queue.put({'buffer': temp_buffer, 'offset': current_offset})
 
 
-    def build_file(url):
+    def build_file(self, url):
         # TODO-- perform a HEAD request to get the file_size / support range / file_name
-
         opener = urllib2.build_opener()
         raise NotImplementedError("Not quite implemented yet!")
