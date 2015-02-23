@@ -10,6 +10,8 @@ parameters:
 | --delete_after_download=  | none                  |no (defaults to false)     |
 | --output-directory=       | /media/, "C:\\Media"  |no (defaults to current directory|
 | --exclude_pattern=        | shared                |no                         |
+| --days_to_keep=           | 1-30                  |no                         |
+
 
 example
 ./putio_downloader.py --api_key=ABC --output_directory="/media/" --number_of_connections=8 --exclude_pattern='items shared' --exclude_pattern='Sports'
