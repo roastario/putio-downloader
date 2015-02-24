@@ -3,9 +3,8 @@ import sqlite3
 import time
 
 
+YES_MAN = type('RecordKeeper', (object,), {"record_completion": lambda s: None, "should_download": lambda s: True})
 create_table_string = "CREATE TABLE IF NOT EXISTS DOWNLOADS(file_name TEXT PRIMARY KEY, download_date NUM)"
-
-YES_MAN = type('RecordKeeper', (object,), {"record_completion": lambda s: True, "should_download": lambda s: True})
 
 
 class RecordKeeper(object):

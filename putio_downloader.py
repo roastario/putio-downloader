@@ -4,13 +4,13 @@ import getopt
 import sys
 
 import download_record_keeper as rk
-
 from putio import Client
 
 
 if __name__ == "__main__":
-    optlist, args = getopt.getopt(sys.argv[1:], '', ['api_key=', 'output-directory=', 'number_of_connections=',
-                                                     'delete_after_download', 'exclude_pattern=', 'help'])
+    optlist, args = getopt.getopt(sys.argv[1:], '', ['api_key=', 'output_directory=', 'number_of_connections=',
+                                                     'delete_after_download', 'exclude_pattern=', 'help',
+                                                     'days_to_keep='])
 
     parsed_args = {}
     for opt in optlist:
@@ -24,7 +24,7 @@ if __name__ == "__main__":
 
     if 'api_key' not in parsed_args or 'help' in parsed_args:
         print "usage: ./putio.py --api_key=<API_KEY> [--output_directory=<dir> " \
-              "--number_of_connections=<N> --exclude_pattern --delete_after_download]"
+              "--number_of_connections=<N> --exclude_pattern --delete_after_download --days_to_keep]"
 
     output_directory = parsed_args['output_directory'] if 'output_directory' in parsed_args else '.'
     delete_after_download = True if 'delete_after_download' in parsed_args else False
