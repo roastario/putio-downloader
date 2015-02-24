@@ -15,7 +15,7 @@ class RecordKeeper(object):
         self.seconds_to_keep = self.days_to_keep * 24 * 60 * 60
 
     def record_completion(self, file_name):
-        print("Marked: {0} as downloaded", file_name)
+        print("Marked: {0} as downloaded".format(file_name))
         insert_string = """
                         INSERT or REPLACE into DOWNLOADS (file_name, download_date) values
                         ( ? , ?)

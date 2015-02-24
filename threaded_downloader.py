@@ -1,13 +1,17 @@
 import urllib2
 import Queue
 import threading
+import time
 
 import os
+import sys
 
 
 class DiskWriter(object):
-    @staticmethod
-    def writer(queue, file_name):
+    def __init__(self):
+        self.last_print_time = 0
+
+    def writer(self, queue, file_name, file_size):
         written_bytes = 0
         f = open(file_name, 'wb')
         print "Saving to: {0}".format(file_name)
@@ -19,11 +23,19 @@ class DiskWriter(object):
             f.write(item['buffer'])
             f.flush()
             written_bytes = written_bytes + len(item['buffer'])
+            self.print_progress(bytes_written=written_bytes, file_size=file_size)
 
         print "Finished {0}".format(file_name)
         f.close()
 
-
+    def print_progress(self, bytes_written, file_size):
+        if (time.time() - self.last_print_time) > 5:
+            rows, columns = os.popen('stty size', 'r').read().split()
+            sys.stdout.write("\r")
+            sys.stdout.write('#' * int(int(columns) * (bytes_written / float(file_size))))
+            sys.stdout.flush()
+            self.last_print_time = time.time()
+            
 class ThreadedDownloader(object):
     def __init__(self, download_dir, number_of_connections=5):
         self.download_dir = download_dir
@@ -62,7 +74,7 @@ class ThreadedDownloader(object):
 
     def create_and_start_writing_thread(self, dest, file_info):
         dest = os.path.join(dest, file_info.name.encode('ascii', 'replace'))
-        writer_thread = threading.Thread(target=DiskWriter.writer, args=(self.queue, dest))
+        writer_thread = threading.Thread(target=DiskWriter().writer, args=(self.queue, dest, file_info.size))
         writer_thread.start()
         return writer_thread
 
