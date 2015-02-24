@@ -151,6 +151,7 @@ class _File(_BaseResource):
             sub_file.download(dest, delete_after_download, number_of_connections=number_of_connections, days_to_keep=7)
 
         if delete_after_download and self.age > days_to_keep:
+            print "Deleting folder {0} as it more than {1} days old".format(self.name, days_to_keep)
             self.delete()
 
     def _download_file(self, dest='.', delete_after_download=False, number_of_connections=1, days_to_keep=7):
@@ -166,6 +167,7 @@ class _File(_BaseResource):
             print "Skipping: " + self.name + " as it has been downloaded already!"
 
         if delete_after_download and self.age > days_to_keep:
+            print "Deleting folder {0} as it more than {1} days old".format(self.name, days_to_keep)
             self.delete()
 
     def delete(self):

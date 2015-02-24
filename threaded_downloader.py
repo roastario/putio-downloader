@@ -64,6 +64,7 @@ class ThreadedDownloader(object):
         downloading_threads = []
         for chunk in chunks:
             download_thread = threading.Thread(target=self.download_part, args=(chunk, url))
+            download_thread.setDaemon(True)
             downloading_threads.append(download_thread)
         return downloading_threads
 
@@ -81,6 +82,7 @@ class ThreadedDownloader(object):
     def create_and_start_writing_thread(self, dest, file_info):
         dest = os.path.join(dest, file_info.name.encode('ascii', 'replace'))
         writer_thread = threading.Thread(target=DiskWriter().writer, args=(self.queue, dest, file_info.size))
+        writer_thread.setDaemon(True)
         writer_thread.start()
         return writer_thread
 
