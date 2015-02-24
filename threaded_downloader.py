@@ -27,7 +27,7 @@ class DiskWriter(object):
             written_bytes = written_bytes + len(item['buffer'])
             self.print_progress(bytes_written=written_bytes, file_size=file_size)
 
-        print "\rFinished {0}".format(file_name)
+        print "\nFinished {0}".format(file_name)
         f.close()
 
     def print_progress(self, bytes_written, file_size):
