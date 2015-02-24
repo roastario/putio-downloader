@@ -10,6 +10,8 @@ import sys
 class DiskWriter(object):
     def __init__(self):
         self.last_print_time = 0
+        self.rows = 80
+        self.columns = 80
 
     def writer(self, queue, file_name, file_size):
         written_bytes = 0
@@ -25,16 +27,20 @@ class DiskWriter(object):
             written_bytes = written_bytes + len(item['buffer'])
             self.print_progress(bytes_written=written_bytes, file_size=file_size)
 
-        print "Finished {0}".format(file_name)
+        print "\rFinished {0}".format(file_name)
         f.close()
 
     def print_progress(self, bytes_written, file_size):
         if (time.time() - self.last_print_time) > 5:
-            rows, columns = os.popen('stty size', 'r').read().split()
-            sys.stdout.write("\r")
-            sys.stdout.write('#' * int(int(columns) * (bytes_written / float(file_size))))
-            sys.stdout.flush()
-            self.last_print_time = time.time()
+            try:
+                self.rows, self.columns = os.popen('stty size', 'r').read().split()
+            except ValueError:
+                # This is when the console has been opened from a non-standard terminal, do not try again
+                self.last_print_time = sys.maxint
+        sys.stdout.write("\r")
+        sys.stdout.write('#' * int(int(self.columns) * (bytes_written / float(file_size))))
+        sys.stdout.flush()
+        self.last_print_time = time.time()
             
 class ThreadedDownloader(object):
     def __init__(self, download_dir, number_of_connections=5):
