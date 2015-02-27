@@ -65,10 +65,10 @@ def get_command_args():
                       help="Directory to move files from")
     opts, args = parser.parse_args()
 
-    # if opts.destination is None or opts.input is None:
-    #     raise Exception("Please specify --output_dir=<dir> and --input_dir=<dir> when starting")
-    # else:
-    return opts
+    if opts.destination is None or opts.input is None:
+        raise Exception("Please specify --output_dir=<dir> and --input_dir=<dir> when starting")
+    else:
+        return opts
 
 
 if __name__ == "__main__":
