@@ -169,6 +169,8 @@ class _File(_BaseResource):
         if delete_after_download and self.age > days_to_keep:
             print "Deleting folder {0} as it more than {1} days old".format(self.name, days_to_keep)
             self.delete()
+        else:
+            print "Leaving {0} on put.io as it is less than {1} days old".format(self.name, days_to_keep)
 
     def delete(self):
         return self.client.request('/files/delete', method='POST',
