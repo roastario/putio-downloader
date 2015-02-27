@@ -148,7 +148,7 @@ class _File(_BaseResource):
             os.mkdir(dest)
 
         for sub_file in self.dir():
-            sub_file.download(dest, delete_after_download, number_of_connections=number_of_connections, days_to_keep=7)
+            sub_file.download(dest, delete_after_download, number_of_connections=number_of_connections, days_to_keep=days_to_keep)
 
         if delete_after_download and self.age > days_to_keep:
             print "Deleting folder {0} as it more than {1} days old".format(self.name, days_to_keep)
