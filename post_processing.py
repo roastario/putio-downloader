@@ -1,13 +1,15 @@
-from tvnamer.tvnamer_exceptions import DataRetrievalError, ShowNotFound, EpisodeNotFound, EpisodeNameNotFound, \
+from tvnamer.tvnamer.tvnamer_exceptions import DataRetrievalError, ShowNotFound, EpisodeNotFound, EpisodeNameNotFound, \
     SeasonNotFound
 
 __author__ = 'stefanofranz'
 
-from tvdb_api import Tvdb
-import tvnamer.utils as utils
+from tvdb_api.tvdb_api import Tvdb
+import tvnamer.tvnamer.utils as utils
 import os
 import shutil
 import optparse
+
+video_formats = ['.avi', '.mkv', '.mp4']
 
 
 def create_dir(target):
@@ -16,7 +18,8 @@ def create_dir(target):
 
 
 class TVPostProcessor(object):
-    def __init__(self, base_directory):
+    def __init__(self, input_directory, base_directory):
+        self.input_directory = input_directory
         self.tvdb_instance = Tvdb(interactive=False, search_all_languages=False, language='en')
         self.target_dir = os.path.join(base_directory, "TV")
 
@@ -39,6 +42,19 @@ class TVPostProcessor(object):
                 print "Unable to rename {0} due to error: {1}".format(file_name, errormsg)
                 return False
 
+    def process_directory(self):
+        for root, dirs, files in os.walk(self.input_directory):
+            for name in files:
+                fileName, fileExtension = os.path.splitext(name)
+                if fileExtension.lower() in video_formats:
+                    path = os.path.join(root, name)
+                    print "P: ", path
+                    try:
+                        self.rename_file(path)
+                    except Exception, ex:
+                        print("Failed to process {0} due to error {1}".format(os.path.join(root, name), ex.message))
+            for name in dirs:
+                pass
 
 def get_command_args():
     global parser, opts, args
@@ -49,14 +65,13 @@ def get_command_args():
                       help="Directory to move files from")
     opts, args = parser.parse_args()
 
-    if opts.destination is None or opts.input is None:
-        raise Exception("Please specify --output_dir=<dir> and --input_dir=<dir> when starting")
-    else:
-        return opts
+    # if opts.destination is None or opts.input is None:
+    #     raise Exception("Please specify --output_dir=<dir> and --input_dir=<dir> when starting")
+    # else:
+    return opts
 
 
 if __name__ == "__main__":
     opts = get_command_args()
-    pp = TVPostProcessor(opts.destination)
-    pp.rename_file(
-        "Last.Week.Tonight.With.John.Oliver.S02E03.720p.HDTV.x264-BATV/Last.Week.Tonight.With.John.Oliver.S02E03.720p.HDTV.x264-BATV.mkv")
+    pp = TVPostProcessor(opts.input, opts.destination)
+    pp.process_directory()
