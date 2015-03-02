@@ -5,9 +5,15 @@ import getopt
 import sys
 import ConfigParser
 
-
 import download_record_keeper as rk
 from putio import Client
+
+
+def process_exclude_filter_config(config):
+    excludes = []
+    for key, exclude in config.items('Excludes'):
+        excludes.append(exclude)
+    return excludes
 
 
 if __name__ == "__main__":
@@ -29,16 +35,23 @@ if __name__ == "__main__":
         print "usage: ./putio.py --api_key=<API_KEY> [--output_directory=<dir> " \
               "--number_of_connections=<N> --exclude_pattern --delete_after_download --days_to_keep]"
 
-    output_directory = parsed_args['output_directory'] if 'output_directory' in parsed_args else '.'
-    delete_after_download = True if 'delete_after_download' in parsed_args else False
-    number_of_connections = parsed_args['number_of_connections'] if 'number_of_connections' in parsed_args else 1
-    strings_to_filter = parsed_args['exclude_pattern'] if 'exclude_pattern' in parsed_args else []
-    days_to_keep = parsed_args['days_to_keep'] if 'days_to_keep' in parsed_args else 7
-    client = Client(parsed_args['api_key'], record_keeper=rk.RecordKeeper(days_to_keep))
-
-
     config = ConfigParser.RawConfigParser()
     config.read('example.cfg')
+    output_directory = config.get('Config', 'staging_directory')
+    tv_directory = config.get('Config', 'tv_directory')
+    delete_after_download = config.get('Config', 'delete_after_download')
+    number_of_connections = config.get('Config', 'number_of_connections')
+    days_to_keep = config.get('Config', 'days_to_keep')
+    strings_to_filter = process_exclude_filter_config(config)
+
+    output_directory = parsed_args['output_directory'] if 'output_directory' in parsed_args else output_directory
+    tv_directory = parsed_args['tv_directory'] if 'tv_directory' in parsed_args else tv_directory
+    delete_after_download = True if 'delete_after_download' in parsed_args else delete_after_download
+    number_of_connections = parsed_args[
+        'number_of_connections'] if 'number_of_connections' in parsed_args else number_of_connections
+    strings_to_filter = parsed_args['exclude_pattern'] if 'exclude_pattern' in parsed_args else strings_to_filter
+    days_to_keep = parsed_args['days_to_keep'] if 'days_to_keep' in parsed_args else 7
+    client = Client(parsed_args['api_key'], record_keeper=rk.RecordKeeper(days_to_keep))
 
     for FILE in client.File.list():
         was_filtered = False
