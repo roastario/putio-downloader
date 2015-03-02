@@ -3,6 +3,8 @@ __author__ = 'stefanofranz'
 
 import getopt
 import sys
+import ConfigParser
+
 
 import download_record_keeper as rk
 from putio import Client
@@ -33,6 +35,10 @@ if __name__ == "__main__":
     strings_to_filter = parsed_args['exclude_pattern'] if 'exclude_pattern' in parsed_args else []
     days_to_keep = parsed_args['days_to_keep'] if 'days_to_keep' in parsed_args else 7
     client = Client(parsed_args['api_key'], record_keeper=rk.RecordKeeper(days_to_keep))
+
+
+    config = ConfigParser.RawConfigParser()
+    config.read('example.cfg')
 
     for FILE in client.File.list():
         was_filtered = False
