@@ -8,7 +8,7 @@ import json
 import logging
 
 import requests.requests.sessions as requests
-import dateutil.dateutil
+import dateutil.dateutil.parser as date_parser
 
 import threaded_downloader as td
 import download_record_keeper as rk
@@ -86,7 +86,7 @@ class _BaseResource(object):
         self.name = None
         self.__dict__.update(resource_dict)
         try:
-            self.created_at = dateutil.parser.parse(self.created_at)
+            self.created_at = date_parser.parse(self.created_at)
             self.age = (datetime.datetime.today() - self.created_at).days
         except (AttributeError, ValueError):
             self.created_at = None
