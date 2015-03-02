@@ -1,10 +1,10 @@
-from tvnamer.tvnamer_exceptions import DataRetrievalError, ShowNotFound, EpisodeNotFound, EpisodeNameNotFound, \
+from tvnamer.tvnamer.tvnamer_exceptions import DataRetrievalError, ShowNotFound, EpisodeNotFound, EpisodeNameNotFound, \
     SeasonNotFound
 
 __author__ = 'stefanofranz'
 
-from tvdb_api import Tvdb
-import tvnamer.utils as utils
+from tvdb_api.tvdb_api import Tvdb
+import tvnamer.tvnamer.utils as utils
 import os
 import shutil
 import optparse
@@ -15,10 +15,23 @@ def create_dir(target):
         os.makedirs(target)
 
 
+def selectSeries(instance, serieses):
+    print "Found {0} matching series".format(len(serieses))
+    for sery in serieses:
+        series = type('TvSeries', (object,), sery)
+        print "\tFound: {0}, with airdate: {1}".format(series.seriesname, series.firstaired)
+
+    selected = sorted(serieses, key=lambda s: type('TvSeries', (object,), s).firstaired, reverse=True)[0]
+    print "Selecting: " + selected['seriesname']
+    return selected
+
+CUSTOM_UI = type('DUMMY', (object,), {"selectSeries": selectSeries, '__init__': lambda *args, **kwargs: None})
+
+
 class TVPostProcessor(object):
     def __init__(self, base_directory):
-        self.tvdb_instance = Tvdb(interactive=False, search_all_languages=False, language='en')
-        self.target_dir = os.path.join(base_directory, "TV")
+        self.tvdb_instance = Tvdb(interactive=False, search_all_languages=False, language='en', custom_ui=CUSTOM_UI)
+        self.target_dir = base_directory
 
     def rename_file(self, file_name):
         create_dir(self.target_dir)
@@ -41,7 +54,6 @@ class TVPostProcessor(object):
 
 
 def get_command_args():
-    global parser, opts, args
     parser = optparse.OptionParser(usage="%prog --output_dir=<dir>", add_help_option=False)
     parser.add_option("-d", "--output_dir", action="store", dest="destination",
                       help="Destination to move files to")
@@ -58,5 +70,4 @@ def get_command_args():
 if __name__ == "__main__":
     opts = get_command_args()
     pp = TVPostProcessor(opts.destination)
-    pp.rename_file(
-        "Last.Week.Tonight.With.John.Oliver.S02E03.720p.HDTV.x264-BATV/Last.Week.Tonight.With.John.Oliver.S02E03.720p.HDTV.x264-BATV.mkv")
+    pp.rename_file("battlestar.galactica.s02e12.avi")
