@@ -7,8 +7,8 @@ import os
 import json
 import logging
 
-import requests
-import dateutil.parser
+import requests.requests.sessions as requests
+import dateutil.dateutil
 
 import threaded_downloader as td
 import download_record_keeper as rk

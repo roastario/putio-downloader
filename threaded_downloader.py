@@ -26,7 +26,7 @@ class DiskWriter(object):
             f.seek(item['offset'])
             f.write(item['buffer'])
             f.flush()
-            written_bytes = written_bytes + len(item['buffer'])
+            written_bytes += len(item['buffer'])
             self.print_progress(bytes_written=written_bytes, file_size=file_size)
 
         f.close()
