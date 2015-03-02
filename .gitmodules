@@ -4,6 +4,3 @@
 [submodule "tvnamer"]
 	path = tvnamer
 	url = https://github.com/roastario/tvnamer.git
-[submodule "requests"]
-	path = requests
-	url = git://github.com/kennethreitz/requests.git
