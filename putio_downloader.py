@@ -7,6 +7,7 @@ import ConfigParser
 
 import download_record_keeper as rk
 from putio import Client
+from post_processing import TVPostProcessor as PostProcessor
 
 
 def process_exclude_filter_config(config):
@@ -66,3 +67,9 @@ if __name__ == "__main__":
                               number_of_connections=number_of_connections, days_to_keep=days_to_keep)
         except Exception, e:
             print "FATAL: FAILED TO DOWNLOAD " + FILE.name + " due to " + str(e)
+
+    print "Completed downloading files, starting to post-process"
+    processor = PostProcessor(output_directory, tv_directory)
+    processor.process_directory()
+    print "Completed post processing"
+

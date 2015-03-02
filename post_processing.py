@@ -31,9 +31,10 @@ CUSTOM_UI = type('DUMMY', (object,), {"selectSeries": selectSeries, '__init__': 
 
 
 class TVPostProcessor(object):
-    def __init__(self, base_directory):
+    def __init__(self, input_directory, output_directory):
         self.tvdb_instance = Tvdb(interactive=False, search_all_languages=False, language='en', custom_ui=CUSTOM_UI)
-        self.target_dir = base_directory
+        self.target_dir = output_directory
+        self.input_directory = input_directory
 
     def rename_file(self, file_name):
         create_dir(self.target_dir)
