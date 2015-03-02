@@ -36,10 +36,21 @@ class DiskWriter(object):
         if not crc_pass:
             print "Failed to verify{0}".format(file_name)
 
+    @staticmethod
+    def read_in_chunks(file_object, chunk_size=1024):
+        """Lazy function (generator) to read a file piece by piece.
+        Default chunk size: 1k."""
+        while True:
+            data = file_object.read(chunk_size)
+            if not data:
+                break
+            yield data
+
     def crc(self, file_name, crc_value):
         prev = 0
-        for eachLine in open(file_name, "rb"):
-            prev = zlib.crc32(eachLine, prev)
+        file_to_check = open(file_name, "rb")
+        for chunk in self.read_in_chunks(file_to_check, chunk_size=1024):
+            prev = zlib.crc32(chunk, prev)
         self.success = ("%X" % (prev & 0xFFFFFFFF)).lower() == crc_value
         return self.success
 
