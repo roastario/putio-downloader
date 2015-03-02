@@ -46,4 +46,4 @@ if __name__ == "__main__":
                 FILE.download(dest=output_directory, delete_after_download=delete_after_download,
                               number_of_connections=number_of_connections, days_to_keep=days_to_keep)
         except Exception, e:
-            print "FATAL: FAILED TO DOWNLOAD " + FILE.name + " due to " + e.message
+            print "FATAL: FAILED TO DOWNLOAD " + FILE.name + " due to " + str(e)

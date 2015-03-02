@@ -5,6 +5,7 @@ import time
 
 import os
 import sys
+import zlib
 
 
 class DiskWriter(object):
@@ -12,8 +13,9 @@ class DiskWriter(object):
         self.last_print_time = 0
         self.rows = 80
         self.columns = 80
+        self.success = False
 
-    def writer(self, queue, file_name, file_size):
+    def writer(self, queue, file_name, file_size, crc32):
         written_bytes = 0
         f = open(file_name, 'wb')
         print "Saving to: {0}".format(file_name)
@@ -27,8 +29,19 @@ class DiskWriter(object):
             written_bytes = written_bytes + len(item['buffer'])
             self.print_progress(bytes_written=written_bytes, file_size=file_size)
 
-        print "\nFinished {0}".format(file_name)
         f.close()
+        print "\nFinished Writing {0}".format(file_name)
+        print "Verifying {0}".format(file_name)
+        crc_pass = self.crc(file_name=file_name, crc_value=crc32)
+        if not crc_pass:
+            print "Failed to verify{0}".format(file_name)
+
+    def crc(self, file_name, crc_value):
+        prev = 0
+        for eachLine in open(file_name, "rb"):
+            prev = zlib.crc32(eachLine, prev)
+        self.success = ("%X" % (prev & 0xFFFFFFFF)).lower() == crc_value
+        return self.success
 
     def print_progress(self, bytes_written, file_size):
         if (time.time() - self.last_print_time) > 5:
@@ -41,7 +54,8 @@ class DiskWriter(object):
         sys.stdout.write('#' * int(int(self.columns) * (bytes_written / float(file_size))))
         sys.stdout.flush()
         self.last_print_time = time.time()
-            
+
+
 class ThreadedDownloader(object):
     def __init__(self, download_dir, number_of_connections=5):
         self.download_dir = download_dir
@@ -79,9 +93,10 @@ class ThreadedDownloader(object):
         self.queue.put(None)
         writer_thread.join()
 
-    def create_and_start_writing_thread(self, dest, file_info):
+    def create_and_start_writing_thread(self, dest, file_info, writer):
         dest = os.path.join(dest, file_info.name.encode('ascii', 'replace'))
-        writer_thread = threading.Thread(target=DiskWriter().writer, args=(self.queue, dest, file_info.size))
+        writer_thread = threading.Thread(target=writer.writer,
+                                         args=(self.queue, dest, file_info.size, file_info.crc32))
         writer_thread.setDaemon(True)
         writer_thread.start()
         return writer_thread
@@ -92,27 +107,38 @@ class ThreadedDownloader(object):
         file_size = file_info.size
         chunks = self.create_chunks(file_size)
         downloading_threads = self.create_downloading_threads(chunks, url)
-        writer_thread = self.create_and_start_writing_thread(dest, file_info)
+        writer = DiskWriter()
+        writer_thread = self.create_and_start_writing_thread(dest, file_info, writer)
         self.start_and_wait_for_download(downloading_threads)
         self.wait_for_writer_to_finish(writer_thread)
 
-    def download_part(self, chunk, url):
-        start_byte = chunk['offset']
-        end_byte = start_byte + chunk['bytes'] - 1
-        opener = urllib2.build_opener()
-        headers = [('Range', 'bytes={0}-{1}'.format(start_byte, end_byte))]
-        opener.addheaders = headers
-        opened_url = opener.open(url)
-        block_sz = 1024 * 256  # (256K)
-        bytes_downloaded = 0
-        while True:
-            temp_buffer = opened_url.read(block_sz)
-            if not temp_buffer:
-                break
-            current_offset = start_byte + bytes_downloaded
-            bytes_in_buffer = len(temp_buffer)
-            bytes_downloaded = bytes_downloaded + bytes_in_buffer
-            self.queue.put({'buffer': temp_buffer, 'offset': current_offset})
+        if not writer.success:
+            raise RuntimeError("crc mismatch")
+
+
+    def download_part(self, chunk, url, recurse_count=0):
+        if recurse_count > 4:
+            return
+
+        try:
+            start_byte = chunk['offset']
+            end_byte = start_byte + chunk['bytes'] - 1
+            opener = urllib2.build_opener()
+            headers = [('Range', 'bytes={0}-{1}'.format(start_byte, end_byte))]
+            opener.addheaders = headers
+            opened_url = opener.open(url)
+            block_sz = 1024 * 256  # (256K)
+            bytes_downloaded = 0
+            while True:
+                temp_buffer = opened_url.read(block_sz)
+                if not temp_buffer:
+                    break
+                current_offset = start_byte + bytes_downloaded
+                bytes_in_buffer = len(temp_buffer)
+                bytes_downloaded = bytes_downloaded + bytes_in_buffer
+                self.queue.put({'buffer': temp_buffer, 'offset': current_offset})
+        except:
+            self.download_part(chunk=chunk, url=url, recurse_count=(recurse_count + 1))
 
 
     def build_file(self, url):

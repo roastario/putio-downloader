@@ -17,11 +17,23 @@ def create_dir(target):
         os.makedirs(target)
 
 
+def selectSeries(instance, serieses):
+    print "Found {0} matching series".format(len(serieses))
+    for sery in serieses:
+        series = type('TvSeries', (object,), sery)
+        print "\tFound: {0}, with airdate: {1}".format(series.seriesname, series.firstaired)
+
+    selected = sorted(serieses, key=lambda s: type('TvSeries', (object,), s).firstaired, reverse=True)[0]
+    print "Selecting: " + selected['seriesname']
+    return selected
+
+CUSTOM_UI = type('DUMMY', (object,), {"selectSeries": selectSeries, '__init__': lambda *args, **kwargs: None})
+
+
 class TVPostProcessor(object):
-    def __init__(self, input_directory, base_directory):
-        self.input_directory = input_directory
-        self.tvdb_instance = Tvdb(interactive=False, search_all_languages=False, language='en')
-        self.target_dir = os.path.join(base_directory, "TV")
+    def __init__(self, base_directory):
+        self.tvdb_instance = Tvdb(interactive=False, search_all_languages=False, language='en', custom_ui=CUSTOM_UI)
+        self.target_dir = base_directory
 
     def rename_file(self, file_name):
         create_dir(self.target_dir)
@@ -48,7 +60,6 @@ class TVPostProcessor(object):
                 fileName, fileExtension = os.path.splitext(name)
                 if fileExtension.lower() in video_formats:
                     path = os.path.join(root, name)
-                    print "P: ", path
                     try:
                         self.rename_file(path)
                     except Exception, ex:
@@ -57,7 +68,6 @@ class TVPostProcessor(object):
                 pass
 
 def get_command_args():
-    global parser, opts, args
     parser = optparse.OptionParser(usage="%prog --output_dir=<dir>", add_help_option=False)
     parser.add_option("-d", "--output_dir", action="store", dest="destination",
                       help="Destination to move files to")
@@ -73,5 +83,5 @@ def get_command_args():
 
 if __name__ == "__main__":
     opts = get_command_args()
-    pp = TVPostProcessor(opts.input, opts.destination)
-    pp.process_directory()
+    pp = TVPostProcessor(opts.destination)
+    pp.rename_file("battlestar.galactica.s02e12.avi")

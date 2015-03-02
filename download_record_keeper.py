@@ -3,7 +3,7 @@ import sqlite3
 import time
 
 
-YES_MAN = type('RecordKeeper', (object,), {"record_completion": lambda s: None, "should_download": lambda s: True})
+YES_MAN = type('DUMMY', (object,), {"record_completion": lambda i, s: None, "should_download": lambda i, s: True})()
 create_table_string = "CREATE TABLE IF NOT EXISTS DOWNLOADS(file_name TEXT PRIMARY KEY, download_date NUM)"
 
 
@@ -39,6 +39,7 @@ class RecordKeeper(object):
 
 
 if __name__ == "__main__":
-    record_keeper = RecordKeeper(8)
+    record_keeper = RecordKeeper(0)
+    print record_keeper.should_download("this_is_a_fake")
     record_keeper.record_completion("this_is_a_fake")
     print record_keeper.should_download("this_is_a_fake")
