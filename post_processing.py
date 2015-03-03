@@ -18,14 +18,16 @@ def create_dir(target):
 
 
 def selectSeries(instance, serieses):
+    serieses = map(lambda s: type('TvSeries', (object,), s), serieses)
+    serieses = filter(lambda s: hasattr(s, 'firstaired') and hasattr(s, 'seriesname'), serieses)
+    serieses = sorted(serieses, key=lambda s: s.firstaired, reverse=True)
     print "Found {0} matching series".format(len(serieses))
     for sery in serieses:
-        series = type('TvSeries', (object,), sery)
-        print "\tFound: {0}, with airdate: {1}".format(series.seriesname, series.firstaired)
+        print "\tFound: {0}, with airdate: {1}".format(sery.seriesname, sery.firstaired)
 
-    selected = sorted(serieses, key=lambda s: type('TvSeries', (object,), s).firstaired, reverse=True)[0]
-    print "Selecting: " + selected['seriesname']
-    return selected
+    selected = serieses[0]
+    print "Selecting: " + selected.seriesname
+    return selected.__dict__
 
 CUSTOM_UI = type('DUMMY', (object,), {"selectSeries": selectSeries, '__init__': lambda *args, **kwargs: None})
 
@@ -84,5 +86,6 @@ def get_command_args():
 
 if __name__ == "__main__":
     opts = get_command_args()
-    pp = TVPostProcessor(opts.destination)
-    pp.rename_file("battlestar.galactica.s02e12.avi")
+    pp = TVPostProcessor(opts.destination, '.')
+    pp.rename_file(
+        "/DataVolume/shares/Public/Seinfeld Complete Box-set x264 Seasons 1 - 9 + Extras DVDRip TSV/Season 3/Seinfeld Season 03 Episode 06 - The Parking George.mkv")
