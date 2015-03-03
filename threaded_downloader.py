@@ -47,11 +47,14 @@ class DiskWriter(object):
             yield data
 
     def crc(self, file_name, crc_value):
+        if crc_value is None or crc_value:
+            self.success = True
+            return self.success
         prev = 0
         file_to_check = open(file_name, "rb")
         for chunk in self.read_in_chunks(file_to_check, chunk_size=1024*512):
             prev = zlib.crc32(chunk, prev)
-        self.success = ("%X" % (prev & 0xFFFFFFFF)).lower() == crc_value
+        self.success = ("%X" % (prev & 0xFFFFFFFF)).lower() == crc_value.lower()
         return self.success
 
     def print_progress(self, bytes_written, file_size):
