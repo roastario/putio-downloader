@@ -85,6 +85,7 @@ class _BaseResource(object):
         self.id = None
         self.name = None
         self.__dict__.update(resource_dict)
+        self.name = self.name.encode('utf-8')
         try:
             self.created_at = date_parser.parse(self.created_at)
             self.age = (datetime.datetime.today() - self.created_at).days
