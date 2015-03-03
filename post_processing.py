@@ -20,7 +20,7 @@ def create_dir(target):
 def selectSeries(instance, serieses):
     serieses = map(lambda s: type('TvSeries', (object,), s), serieses)
     serieses = filter(lambda s: hasattr(s, 'firstaired') and hasattr(s, 'seriesname'), serieses)
-    serieses = sorted(serieses, key=lambda s: s.firstaired, reverse=True)
+    # serieses = sorted(serieses, key=lambda s: s.firstaired, reverse=True)
     print "Found {0} matching series".format(len(serieses))
     for sery in serieses:
         print "\tFound: {0}, with airdate: {1}".format(sery.seriesname, sery.firstaired)
@@ -86,6 +86,5 @@ def get_command_args():
 
 if __name__ == "__main__":
     opts = get_command_args()
-    pp = TVPostProcessor(opts.destination, '.')
-    pp.rename_file(
-        "/DataVolume/shares/Public/Seinfeld Complete Box-set x264 Seasons 1 - 9 + Extras DVDRip TSV/Season 3/Seinfeld Season 03 Episode 06 - The Parking George.mkv")
+    pp = TVPostProcessor(opts.input, opts.destination)
+    pp.process_directory()
