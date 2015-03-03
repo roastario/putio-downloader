@@ -155,13 +155,16 @@ class _File(_BaseResource):
             self.delete()
 
     def _download_file(self, dest='.', delete_after_download=False, number_of_connections=1, days_to_keep=7):
-        print "Downloading", self.name
+        print "Attempting to download", self.name
 
         if self.client.record_keeper.should_download(os.path.join(dest, self.name)):
-            downloader = td.ThreadedDownloader(".", number_of_connections)
-            url = BASE_URL + '/files/' + str(self.id) + '/download?oauth_token=' + self.client.access_token
-            downloader.multi_part_download_file(dest, url, file_info=self)
-            self.client.record_keeper.record_completion(os.path.join(dest, self.name))
+            try:
+                downloader = td.ThreadedDownloader(".", number_of_connections)
+                url = BASE_URL + '/files/' + str(self.id) + '/download?oauth_token=' + self.client.access_token
+                downloader.multi_part_download_file(dest, url, file_info=self)
+                self.client.record_keeper.record_completion(os.path.join(dest, self.name))
+            except Exception, e:
+                print "Failed to download " + self.name + " due to " + str(e)
             
         else:
             print "Skipping: " + self.name + " as it has been downloaded already!"
