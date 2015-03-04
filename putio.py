@@ -85,7 +85,7 @@ class _BaseResource(object):
         self.id = None
         self.name = None
         self.__dict__.update(resource_dict)
-        self.name = self.name.encode('utf-8')
+        self.name = self.name.encode('utf-8', 'replace')
         try:
             self.created_at = date_parser.parse(self.created_at)
             self.age = (datetime.datetime.today() - self.created_at).days
@@ -141,9 +141,6 @@ class _File(_BaseResource):
 
     def _download_directory(self, dest='.', delete_after_download=False, number_of_connections=1, days_to_keep=7):
         name = self.name
-        if isinstance(name, unicode):
-            name = name.encode('utf-8', 'replace')
-
         dest = os.path.join(dest, name)
         if not os.path.exists(dest):
             os.mkdir(dest)
