@@ -6,11 +6,12 @@ import time
 import os
 import sys
 import zlib
+from cgi import parse_header
 
 
 class DiskWriter(object):
     def __init__(self):
-        self.last_print_time = 0
+        self.last_resize_check_time = 0
         self.rows = 80
         self.columns = 80
         self.success = False
@@ -52,22 +53,22 @@ class DiskWriter(object):
             return self.success
         prev = 0
         file_to_check = open(file_name, "rb")
-        for chunk in self.read_in_chunks(file_to_check, chunk_size=1024*512):
+        for chunk in self.read_in_chunks(file_to_check, chunk_size=1024 * 512):
             prev = zlib.crc32(chunk, prev)
         self.success = ("%X" % (prev & 0xFFFFFFFF)).lower() == crc_value.lower()
         return self.success
 
     def print_progress(self, bytes_written, file_size):
-        if (time.time() - self.last_print_time) > 5:
+        if (time.time() - self.last_resize_check_time) > 10:
             try:
                 self.rows, self.columns = os.popen('stty size', 'r').read().split()
+                self.last_resize_check_time = time.time()
             except ValueError:
                 # This is when the console has been opened from a non-standard terminal, do not try again
-                self.last_print_time = sys.maxint
+                self.last_resize_check_time = sys.maxint
         sys.stdout.write("\r")
         sys.stdout.write('#' * int(int(self.columns) * (bytes_written / float(file_size))))
         sys.stdout.flush()
-        self.last_print_time = time.time()
 
 
 class ThreadedDownloader(object):
@@ -133,7 +134,6 @@ class ThreadedDownloader(object):
     def download_part(self, chunk, url, recurse_count=0):
         if recurse_count > 4:
             return
-
         try:
             start_byte = chunk['offset']
             end_byte = start_byte + chunk['bytes'] - 1
@@ -156,6 +156,43 @@ class ThreadedDownloader(object):
 
 
     def build_file(self, url):
-        # TODO-- perform a HEAD request to get the file_size / support range / file_name
-        opener = urllib2.build_opener()
-        raise NotImplementedError("Not quite implemented yet!")
+        request = urllib2.Request(url)
+        request.get_method = lambda: 'HEAD'
+
+        response = urllib2.urlopen(request, timeout=5)
+        headers = response.headers
+
+        might_support_ranges = False if 'Accept-Ranges' in headers and headers['Accept-Ranges'] == 'none' else True
+        definitely_supports_ranges = True if 'Accept-Ranges' in headers and headers[
+                                                                                'Accept-Ranges'] == 'bytes' else False
+        file_size = headers['Content-Length'] if 'Content-Length' in headers else -1
+        file_name = None
+        if 'Content-Disposition' in headers:
+            parsed_content_disposition = parse_header(headers['Content-Disposition'])
+            for content_info in parsed_content_disposition:
+                if 'filename' in content_info:
+                    file_name = content_info['filename']
+                    break
+
+        if file_name is None:
+            file_name = url.split('/')[-1]
+
+        if not definitely_supports_ranges and might_support_ranges:
+            print "Unsure if multi-threaded downloading supported, performing check"
+            opener = urllib2.build_opener()
+            headers = [('Range', 'bytes={0}-{1}'.format(0, 1))]
+            opener.addheaders = headers
+            opened_url = opener.open(url)
+            ## if we reach here, we have not encountered an error - so supports multiple connections
+            definitely_supports_ranges = True
+
+        if not definitely_supports_ranges:
+            raise Exception("Cannot download using multiple connections")
+
+        file_object = type('File', (object,), {'size': int(file_size), 'name': file_name, 'crc32': None})
+        return file_object
+
+
+if __name__ == "__main__":
+    downloader____build_file = ThreadedDownloader('.').multi_part_download_file('./',
+                                                                                'http://releases.ubuntu.com/14.04.2/ubuntu-14.04.2-server-amd64.iso')
