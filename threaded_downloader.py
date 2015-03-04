@@ -47,7 +47,7 @@ class DiskWriter(object):
             yield data
 
     def crc(self, file_name, crc_value):
-        if crc_value is None or crc_value:
+        if crc_value is None:
             self.success = True
             return self.success
         prev = 0
