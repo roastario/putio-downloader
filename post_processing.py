@@ -10,12 +10,18 @@ import shutil
 import optparse
 
 video_formats = ['.avi', '.mkv', '.mp4']
+banned_characters = ['<', '>', ':', '"', '/' '\\', '|', '?', '*']
 
 
 def create_dir(target):
     if not os.path.exists(target):
         os.makedirs(target)
 
+
+def safe_name(name):
+    for banned_character in banned_characters:
+        name = name.replace(banned_character, '')
+    return name
 
 def selectSeries(instance, serieses):
     serieses = map(lambda s: type('TvSeries', (object,), s), serieses)
@@ -42,17 +48,18 @@ class TVPostProcessor(object):
         create_dir(self.target_dir)
 
         episode = utils.FileParser(file_name).parse()
-        if episode.seriesname is None:
+        show_name = safe_name(episode.seriesname)
+        if show_name is None:
             pass
         else:
-            print "Processing {0}".format(episode.generateFilename())
+            episode_name = safe_name(episode.generateFilename())
             try:
                 episode.populateFromTvdb(self.tvdb_instance)
                 full_dir = os.path.join(self.target_dir,
-                                        "{0}/Season {1}/".format(episode.seriesname, episode.seasonnumber))
+                                        "{0}/Season {1}/".format(show_name, episode.seasonnumber))
                 create_dir(full_dir)
-                print("Moving {0} -> {1}".format(file_name, os.path.join(full_dir, episode.generateFilename())))
-                shutil.move(file_name, os.path.join(full_dir, episode.generateFilename()))
+                print("Moving {0} -> {1}".format(file_name, os.path.join(full_dir, episode_name)))
+                shutil.move(file_name, os.path.join(full_dir, episode_name))
             except (DataRetrievalError, ShowNotFound, SeasonNotFound, EpisodeNotFound, EpisodeNameNotFound), errormsg:
                 print "Unable to rename {0} due to error: {1}".format(file_name, errormsg)
                 return False
