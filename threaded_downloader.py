@@ -194,5 +194,5 @@ class ThreadedDownloader(object):
 
 
 if __name__ == "__main__":
-    downloader____build_file = ThreadedDownloader('.').multi_part_download_file('./',
-                                                                                'http://releases.ubuntu.com/14.04.2/ubuntu-14.04.2-server-amd64.iso')
+    url = sys.argv[1]
+    downloader____build_file = ThreadedDownloader('.').multi_part_download_file('./', url)
