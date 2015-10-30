@@ -51,7 +51,8 @@ if __name__ == "__main__":
     number_of_connections = parsed_args[
         'number_of_connections'] if 'number_of_connections' in parsed_args else number_of_connections
     strings_to_filter = parsed_args['exclude_pattern'] if 'exclude_pattern' in parsed_args else strings_to_filter
-    days_to_keep = parsed_args['days_to_keep'] if 'days_to_keep' in parsed_args else 7
+    days_to_keep = int(parsed_args['days_to_keep'] if 'days_to_keep' in parsed_args else 7)
+
     client = Client(parsed_args['api_key'], record_keeper=rk.RecordKeeper(days_to_keep))
 
     for FILE in client.File.list():
